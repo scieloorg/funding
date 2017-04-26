@@ -10,96 +10,75 @@
  * @brief fundRef plugin class
  *
  *
- *	TODO
- *	- use OJS grid to add funders (see for example article author grid)
- *	- funder form should include: funder name + doi and grant id's 
- *
  */
 
 import('lib.pkp.classes.plugins.GenericPlugin');
-
-class FundRefPlugin extends GenericPlugin {
+class fundRefPlugin extends GenericPlugin {
 
    function getName() {
         return 'fundRefPlugin';
     }
 
     function getDisplayName() {
-        return "OJS3 fundRef";
+        return "fundRef";
     }
 
     function getDescription() {
-        return "Crossref Funder registry autocomplete for OJS3 Sponsoring Agencies field";
+        return "Plugin for searching and saving funder name, funder id, and grant number";
     }
 	
     function register($category, $path) {
 		$success = parent::register($category, $path);
 		if ($success && $this->getEnabled()) {
-				HookRegistry::register ('TemplateManager::include', array(&$this, 'handleTemplateDisplay'));				
+			
+			import('plugins.generic.fundRef.classes.FunderDAO');
+			$funderDao = new FunderDAO();
+			DAORegistry::registerDAO('FunderDAO', $funderDao);			
+			
+
+			HookRegistry::register('Templates::Submission::SubmissionMetadataForm::AdditionalMetadata', array($this, 'metadataFieldEdit'));
+			
+			HookRegistry::register('LoadComponentHandler', array($this, 'setupGridHandler'));
+				
         }
-		return $success;    
+		return $success;
 	}
 	
+	
 	/**
-	 * @see TemplateManager::display()
+	 * Permit requests to the Funder grid handler
+	 * @param $hookName string The name of the hook being invoked
+	 * @param $args array The parameters to the invoked hook
 	 */
-	function handleTemplateDisplay($hookName, $args) {
-		$templateMgr =& $args[0];
-		$params =& $args[1];
-		$request =& PKPApplication::getRequest();
-
-		if (!isset($params['smarty_include_tpl_file'])) return false;
-
-		switch ($params['smarty_include_tpl_file']) {
-			case 'submission/submissionMetadataFormFields.tpl':
-				$templateMgr->register_outputfilter(array($this, 'agenciesFilter'));
-				break;
+	function setupGridHandler($hookName, $params) {
+		$component =& $params[0];
+		if ($component == 'plugins.generic.fundRef.controllers.grid.FunderGridHandler') {
+			import($component);
+			FunderGridHandler::setPlugin($this);
+			return true;
 		}
 		return false;
 	}	
 	
-	/**
-	 * Output filter adds CrossRef Funder registry to supporting agencies fields by overriding the exiting controlled vocabulary settings
-	 * @param $output string
-	 * @param $templateMgr TemplateManager
-	 * @return $string
-	 */
-	function agenciesFilter($output, &$templateMgr) {
-		
-		$startPoint = '-agencies\]\[\]",';
-		$endPoint = '</script>';
-		$newscript = "allowSpaces: true,
-				tagSource: function(search, response){
-						$.ajax({
-							url: 'http://api.crossref.org/funders',
-							dataType: 'json',
-							cache: true,
-							data: {
-								query: search.term + '*'
-							},
-							success: 
-										function( data ) {
-										var output = data.message.items;
-										response($.map(output, function(item) {
-											return {
-												label: item.name + ' [' + item['alt-names'] + ']',
-												value: item.name + ' [' + item.uri + ']'
-											}
-										}));
-							}	
-							
-						});
-				}
-			});
-
-		});";
-		
-		$output = preg_replace('#('.$startPoint.')(.*?)('.$endPoint.')#si', '$1'.$newscript.'$3', $output, 1);	
-		$templateMgr->unregister_outputfilter('agenciesFilter');
-		
-		return $output;
-	}
 	
+	/**
+	 * Insert funder panel
+	 */
+	function metadataFieldEdit($hookName, $params) {
+		$smarty =& $params[1];
+		$output =& $params[2];
+		
+		$output .= $smarty->fetch($this->getTemplatePath() . 'metadataForm.tpl');
+		return false;
+	}	
+	
+
+	/**
+	 * @copydoc Plugin::getTemplatePath()
+	 */
+	function getTemplatePath($inCore = false) {
+		return parent::getTemplatePath($inCore) . 'templates/';
+	}
 	
    
 }
