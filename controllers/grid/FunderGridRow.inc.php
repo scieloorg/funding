@@ -16,11 +16,12 @@
 import('lib.pkp.classes.controllers.grid.GridRow');
 
 class FunderGridRow extends GridRow {
+		
 	/**
 	 * Constructor
 	 */
-	function FunderGridRow() {
-		parent::GridRow();
+	function __construct() {
+		parent::__construct();
 	}
 
 	//
@@ -31,9 +32,13 @@ class FunderGridRow extends GridRow {
 	 */
 	function initialize($request, $template = null) {
 		parent::initialize($request, $template);
+		$funderId = $this->getId();
+		$submissionId = $request->getUserVar('submissionId');
 
-		$funderItemId = $this->getId();
-		if (!empty($funderItemId)) {
+		error_log(print_r("gridrow init:", true));
+		error_log(print_r($submissionId, true));
+		
+		if (!empty($funderId)) {
 			$router = $request->getRouter();
 
 			// Create the "edit" action
@@ -42,7 +47,7 @@ class FunderGridRow extends GridRow {
 				new LinkAction(
 					'editFunderItem',
 					new AjaxModal(
-						$router->url($request, null, null, 'editFunderItem', null, array('funderItemId' => $funderItemId)),
+						$router->url($request, null, null, 'editFunder', null, array('funderId' => $funderId, 'submissionId' => $submissionId)),
 						__('grid.action.edit'),
 						'modal_edit',
 						true),
@@ -60,7 +65,7 @@ class FunderGridRow extends GridRow {
 						$request->getSession(),
 						__('common.confirmDelete'),
 						__('grid.action.delete'),
-						$router->url($request, null, null, 'delete', null, array('funderItemId' => $funderItemId)), 'modal_delete'
+						$router->url($request, null, null, 'delete', null, array('funderId' => $funderId)), 'modal_delete'
 					),
 					__('grid.action.delete'),
 					'delete'

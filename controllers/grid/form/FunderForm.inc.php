@@ -3,14 +3,14 @@
 /**
  * @file controllers/grid/form/FunderForm.inc.php
  *
- * Copyright (c) 2014-2016 Simon Fraser University Library
- * Copyright (c) 2003-2016 John Willinsky
+ * Copyright (c) 2014-2017 Simon Fraser University
+ * Copyright (c) 2003-2017 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @class FunderForm
- * @ingroup controllers_grid_navigation
+ * @ingroup controllers_grid_fundRef
  *
- * Form for editing navigation items
+ * Form for 
  *
  */
 
@@ -19,56 +19,48 @@ import('lib.pkp.classes.form.Form');
 class FunderForm extends Form {
 	/** @var int Context (press / journal) ID */
 	var $contextId;
-
-	/** @var string Static page name */
-	var $FunderItemId;
-
-	/** @var StaticPagesPlugin Static pages plugin */
+	var $submissionId;
+	
+	/** @var FundRefPlugin FundRef plugin */
 	var $plugin;
-
+	
 	/**
 	 * Constructor
-	 * @param $navigationPlugin FunderPlugin The navigation plugin
+	 * @param $fundRefPlugin FundRefPlugin The fundRef plugin
 	 * @param $contextId int Context ID
-	 * @param $navigationItemId int Funder item ID (if any)
+	 * @param $funderId int Funder ID (if any)
 	 */
-	function __construct($navigationPlugin, $contextId, $navigationItemId = null) {
-		parent::__construct($navigationPlugin->getTemplatePath() . 'editnavigationItemForm.tpl');
+	function __construct($fundRefPlugin, $contextId, $submissionId, $funderId = null) {
+		parent::__construct($fundRefPlugin->getTemplatePath() . 'editFunderForm.tpl');
 
 		$this->contextId = $contextId;
-		$this->navigationItemId = $navigationItemId;
-		$this->plugin = $navigationPlugin;
-
+		$this->submissionId = $submissionId;
+		$this->funderId = $funderId;
+		$this->plugin = $fundRefPlugin;
+		
+		error_log(print_r("construct editform:", true));
+		error_log(print_r($this->submissionId, true));
+		
 		// Add form checks
+		$this->addCheck(new FormValidator($this, 'funderNameIdentification', 'required', 'plugins.generic.fundRef.funderNameIdentificationRequired'));
 		$this->addCheck(new FormValidatorPost($this));
 		$this->addCheck(new FormValidatorCSRF($this));
-		
-		
-	}
+
+	}	
 
 	/**
-	 * Initialize form data from current group.
+	 * Initialize form data from current group group.
 	 */
 	function initData() {
 		$templateMgr = TemplateManager::getManager();
-		$this->setData('listTypes', array('url' => 'url','smarty' => 'smarty'));
 		
-		if ($this->navigationItemId) {
-			$navigationDao = DAORegistry::getDAO('FunderDAO');
-			$navigationItem = $navigationDao->getById($this->navigationItemId, $this->contextId);
-			
-			$this->setData('parent', $navigationItem->getParent());
-			$this->setData('sort', $navigationItem->getSort());
-			
-			$this->setData('type', $navigationItem->getType());
-			
-			$this->setData('translateTitle', $navigationItem->getTranslateTitle());
-			
-			$this->setData('title', $navigationItem->getTitle(null)); // Localized
-			
-			$this->setData('url', $navigationItem->getUrl()); 
-			
-			
+		$this->setData('submissionId', $this->submissionId);
+		
+		if ($this->funderId) {
+			$funderDao = DAORegistry::getDAO('FunderDAO');
+			$funder = $funderDao->getById($this->funderId);
+			$this->setData('funderNameIdentification', $funder->getFunderNameIdentification());
+			$this->setData('funderGrants', $funder->getFunderGrants());
 		}
 
 	}
@@ -77,7 +69,7 @@ class FunderForm extends Form {
 	 * Assign form data to user-submitted data.
 	 */
 	function readInputData() {
-		$this->readUserVars(array('parent', 'sort', 'type', 'translateTitle', 'title', 'url'));
+		$this->readUserVars(array('funderNameIdentification', 'funderGrants'));
 	}
 
 	/**
@@ -85,9 +77,8 @@ class FunderForm extends Form {
 	 */
 	function fetch($request) {
 		$templateMgr = TemplateManager::getManager();
-		$templateMgr->assign('navigationItemId', $this->navigationItemId);
+		$templateMgr->assign('funderId', $this->funderId);
 		$templateMgr->assign('pluginJavaScriptURL', $this->plugin->getJavaScriptURL($request));
-		
 		return parent::fetch($request);
 	}
 
@@ -95,29 +86,44 @@ class FunderForm extends Form {
 	 * Save form values into the database
 	 */
 	function execute() {
-		$navigationDao = DAORegistry::getDAO('FunderDAO');
-		if ($this->navigationItemId) {
-			// Load and update an existing page
-			$navigationItem = $navigationDao->getById($this->navigationItemId, $this->contextId);
-		} else {
-			// Create a new static page
-			$navigationItem = $navigationDao->newDataObject();
-			$navigationItem->setContextId($this->contextId);
-		}
-
-		$navigationItem->setParent($this->getData('parent'));
-		$navigationItem->setSort($this->getData('sort'));
-		$navigationItem->setType($this->getData('type'));
-		$navigationItem->setTranslateTitle($this->getData('translateTitle'));
-		$navigationItem->setTitle($this->getData('title'), null);
-		$navigationItem->setUrl($this->getData('url'));
+		$funderDao = DAORegistry::getDAO('FunderDAO');
 		
-		if ($this->navigationItemId) {
-			$navigationDao->updateObject($navigationItem);
+		error_log(print_r("execute editform:", true));
+		error_log(print_r($this->submissionId, true));
+		error_log(print_r($this->contextId, true));
+		
+		if ($this->funderId) {
+			// Load and update an existing
+			$funder = $funderDao->getById($this->funderId, $this->contextId);
 		} else {
-			$navigationDao->insertObject($navigationItem);
+			// Create a new 
+			$funder = $funderDao->newDataObject();
+			$funder->setContextId($this->contextId);
 		}
 		
+		$funderName = "";
+		$funderIdentification = "";
+		
+		$funderNameIdentification = $this->getData('funderNameIdentification');
+		
+		if ($funderNameIdentification != ""){
+			$funderName = trim(preg_replace('/\s*\[.*?\]\s*/ ', '', $funderNameIdentification));
+			if (preg_match("/\[(.*?)\]/", $funderNameIdentification, $output))
+				$funderIdentification = $output[1];
+		}
+				
+		$funder->setFunderName($funderName);
+		$funder->setFunderIdentification($funderIdentification);
+		$funder->setFunderGrants($this->getData('funderGrants'));
+		$funder->setFunderName($funderName);
+		$funder->setSubmissionId($this->submissionId);
+		
+		if ($this->funderId) {
+			$funderDao->updateObject($funder);
+		} else {
+			$funderDao->insertObject($funder);
+		}
+				
 	}
 }
 

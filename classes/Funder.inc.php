@@ -16,21 +16,39 @@ class Funder extends DataObject {
 	/**
 	 * Constructor
 	 */
-	function Funder() {
-		parent::DataObject();
+	function __construct() {
+		parent::__construct();
 	}
 
 	//
 	// Get/set methods
 	//
 	
-	function getId() {
-		return $this->getData('id');
+	function getContextId(){
+		return $this->getData('contextId');
+	}
+	
+	function setContextId($contextId) {
+		return $this->setData('contextId', $contextId);
 	}
 
-	function setId($id) {
-		return $this->setData('id', $id);
-	}	
+	function getSubmissionId(){
+		return $this->getData('submissionId');
+	}
+
+	function setSubmissionId($submissionId) {
+		return $this->setData('submissionId', $submissionId);
+	}
+	
+	function getFunderNameIdentification() {
+		
+		if ($this->getData('funderIdentification')){
+			return $this->getData('funderName') . " [".$this->getData('funderIdentification')."]";
+		}
+		else{
+			return $this->getData('funderName');
+		}
+	}
 	
 	function getFunderName() {
 		return $this->getData('funderName');
@@ -39,14 +57,13 @@ class Funder extends DataObject {
 	function setFunderName($funderName) {
 		return $this->setData('funderName', $funderName);
 	}	
-
 	
-	function getFunderDoi() {
-		return $this->getData('funderDoi');
+	function getFunderIdentification() {
+		return $this->getData('funderIdentification');
 	}
 
-	function setFunderDoi($funderDoi) {
-		return $this->setData('funderDoi', $funderDoi);
+	function setFunderIdentification($funderIdentification) {
+		return $this->setData('funderIdentification', $funderIdentification);
 	}	
 	
 	

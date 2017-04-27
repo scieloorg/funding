@@ -11,14 +11,16 @@
   * Localization strings for this plugin.
   *
   -->
-
 <locale name="en_US" full_name="U.S. English">
 	<message key="plugins.generic.fundRef.fundRef">Funding details</message>
 	<message key="plugins.generic.fundRef.addFunder">Add funder</message>
 	<message key="plugins.generic.fundRef.funderName">Name</message>
-	<message key="plugins.generic.fundRef.funderDoi">DOI</message>	
+	<message key="plugins.generic.fundRef.funderIdentification">Funder id</message>	
+	<message key="plugins.generic.fundRef.funderNameIdentification">Funder name and identification</message>
 	<message key="plugins.generic.fundRef.funderGrants">Grant numbers</message>
-	
+	<message key="plugins.generic.fundRef.funderId">id</message>
 	<message key="plugins.generic.fundRef.noneCreated">No funders</message>
+	
+	<message key="plugins.generic.fundRef.funderNameIdentificationRequired">Funder name required</message>
 	
 </locale>

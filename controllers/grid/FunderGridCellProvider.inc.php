@@ -24,11 +24,9 @@ class FunderGridCellProvider extends GridCellProvider {
 		parent::__construct();
 	}
 
-
 	//
 	// Template methods from GridCellProvider
 	//
-
 
 	/**
 	 * Extracts variables for a given column from a data element
@@ -41,10 +39,12 @@ class FunderGridCellProvider extends GridCellProvider {
 		$funderItem = $row->getData();
 
 		switch ($column->getId()) {
+			case 'funderId':
+				return array('label' => $funderItem->getId());
 			case 'funderName':
 				return array('label' => $funderItem->getFunderName());
-			case 'funderDoi':
-				return array('label' => $funderItem->getFunderDoi());
+			case 'funderIdentification':
+				return array('label' => $funderItem->getFunderIdentification());
 			case 'funderGrants':
 				return array('label' => $funderItem->getFunderGrants());
 		}

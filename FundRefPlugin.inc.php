@@ -33,8 +33,7 @@ class fundRefPlugin extends GenericPlugin {
 			
 			import('plugins.generic.fundRef.classes.FunderDAO');
 			$funderDao = new FunderDAO();
-			DAORegistry::registerDAO('FunderDAO', $funderDao);			
-			
+			DAORegistry::registerDAO('FunderDAO', $funderDao);		
 
 			HookRegistry::register('Templates::Submission::SubmissionMetadataForm::AdditionalMetadata', array($this, 'metadataFieldEdit'));
 			
@@ -79,6 +78,13 @@ class fundRefPlugin extends GenericPlugin {
 	function getTemplatePath($inCore = false) {
 		return parent::getTemplatePath($inCore) . 'templates/';
 	}
+	
+	/**
+	 * Get the JavaScript URL for this plugin.
+	 */
+	function getJavaScriptURL($request) {
+		return $request->getBaseUrl() . '/' . $this->getPluginPath() . '/js';
+	}	
 	
    
 }

@@ -19,7 +19,7 @@ import('plugins.generic.fundRef.controllers.grid.FunderGridCellProvider');
 
 class FunderGridHandler extends GridHandler {
 	static $plugin;
-
+	
 	/**
 	 * Set the Funder plugin.
 	 * @param $plugin FunderPlugin
@@ -32,14 +32,17 @@ class FunderGridHandler extends GridHandler {
 	 * Constructor
 	 */
 	function __construct() {
-		parent::__construct();
+		parent::__construct();			
+		
 		$this->addRoleAssignment(
 			array(ROLE_ID_MANAGER),
 			array('fetchGrid', 'fetchRow', 'addFunder', 'editFunder', 'updateFunder', 'delete')
 		);
-	}	
-
-
+		
+						
+	}
+	
+	
 	//
 	// Overridden template methods
 	//
@@ -47,16 +50,22 @@ class FunderGridHandler extends GridHandler {
 	 * @copydoc Gridhandler::initialize()
 	 */
 	function initialize($request, $args = null) {
-		parent::initialize($request);
-		$context = $request->getContext();
-
+		parent::initialize($request, $args);
+		
+		if ($request->getUserVar('submissionId')) {		
+			$submissionId = $request->getUserVar('submissionId');
+		}
+		
+		error_log(print_r("handler initialize:", true));
+		error_log(print_r($submissionId, true));
+				
 		// Set the grid details.
 		$this->setTitle('plugins.generic.fundRef.fundRef');
 		$this->setEmptyRowText('plugins.generic.fundRef.noneCreated');
 
-		// Get the navigation items and add the data to the grid
+		// Get the items and add the data to the grid
 		$funderDao = DAORegistry::getDAO('FunderDAO');
-		$this->setGridDataElements($funderDao->getById(1));
+		$this->setGridDataElements($funderDao->getBySubmissionId($submissionId));
 		
 		// Add grid-level actions
 		$router = $request->getRouter();
@@ -65,7 +74,7 @@ class FunderGridHandler extends GridHandler {
 			new LinkAction(
 				'addFunder',
 				new AjaxModal(
-					$router->url($request, null, null, 'addFunder'),
+					$router->url($request, null, null, 'addFunder', null, array('submissionId' => $submissionId)),
 					__('plugins.generic.fundRef.addFunder'),
 					'modal_add_item'
 				),
@@ -76,6 +85,14 @@ class FunderGridHandler extends GridHandler {
 
 		// Columns
 		$cellProvider = new FunderGridCellProvider();
+		
+		$this->addColumn(new GridColumn(
+			'funderId',
+			'plugins.generic.fundRef.funderId',
+			null,
+			'controllers/grid/gridCell.tpl', // Default null not supported in OMP 1.1
+			$cellProvider
+		));			
 		$this->addColumn(new GridColumn(
 			'funderName',
 			'plugins.generic.fundRef.funderName',
@@ -84,8 +101,8 @@ class FunderGridHandler extends GridHandler {
 			$cellProvider
 		));
 		$this->addColumn(new GridColumn(
-			'funderDoi',
-			'plugins.generic.fundRef.funderDoi',
+			'funderIdentification',
+			'plugins.generic.fundRef.funderIdentification',
 			null,
 			'controllers/grid/gridCell.tpl', // Default null not supported in OMP 1.1
 			$cellProvider
@@ -126,65 +143,73 @@ class FunderGridHandler extends GridHandler {
 	}
 
 	/**
-	 * An action to edit a navigationItem
+	 * An action to edit a funder
 	 * @param $args array Arguments to the request
 	 * @param $request PKPRequest Request object
 	 * @return string Serialized JSON object
 	 */
 	function editFunder($args, $request) {
-		$funderItemId = $request->getUserVar('funderItemId');
+		$funderId = $request->getUserVar('funderId');
 		$context = $request->getContext();
+		$submissionId = $args['submissionId'];
+		
 		$this->setupTemplate($request);
-
+		
+		error_log(print_r("handler editfunder:", true));
+		error_log(print_r($submissionId, true));
+		
+		
 		// Create and present the edit form
 		import('plugins.generic.fundRef.controllers.grid.form.FunderForm');
-		$navigationPlugin = self::$plugin;
-		$navigationForm = new FunderForm(self::$plugin, $context->getId(), $funderItemId);
-		$navigationForm->initData();
-		$json = new JSONMessage(true, $navigationForm->fetch($request));
+		$funderForm = new FunderForm(self::$plugin, $context->getId(), $submissionId, $funderId);
+		$funderForm->initData();
+		$json = new JSONMessage(true, $funderForm->fetch($request));
 		return $json->getString();
 	}
 
 	/**
-	 * Update a navigation item
+	 * Update a funder
 	 * @param $args array
 	 * @param $request PKPRequest
 	 * @return string Serialized JSON object
 	 */
 	function updateFunder($args, $request) {
-		$funderItemId = $request->getUserVar('funderItemId');
+		$funderId = $request->getUserVar('funderId');
 		$context = $request->getContext();
+		$submissionId = $args['submissionId'];
+		
 		$this->setupTemplate($request);
+		
+		error_log(print_r("handler updatefunder:", true));
+		error_log(print_r($submissionId, true));
 
 		// Create and populate the form
 		import('plugins.generic.fundRef.controllers.grid.form.FunderForm');
-		$navigationPlugin = self::$plugin;
-		$navigationForm = new navigationForm(self::$plugin, $context->getId(), $funderItemId);
-		$navigationForm->readInputData();
-
+		$funderForm = new FunderForm(self::$plugin, $context->getId(), $submissionId, $funderId);
+		$funderForm->readInputData();
+		
 		// Check the results
-		if ($navigationForm->validate()) {
-			// Save the results
-			$navigationForm->execute();
- 			return DAO::getDataChangedEvent();
+		if ($funderForm->validate()) {
+			$funderForm->execute();	
+			
+ 			#return DAO::getDataChangedEvent();
+			
 		} else {
 			// Present any errors
-			$json = new JSONMessage(true, $navigationForm->fetch($request));
+			$json = new JSONMessage(true, $funderForm->fetch($request));
 			return $json->getString();
 		}
 	}
 
 	/**
-	 * Delete a navigationItem
+	 * Delete a funder
 	 * @param $args array
 	 * @param $request PKPRequest
 	 * @return string Serialized JSON object
 	 */
 	function delete($args, $request) {
-		$funderItemId = $request->getUserVar('funderItemId');
+		$funderId = $request->getUserVar('funderId');
 		$context = $request->getContext();
-
-
 
 
 	}
