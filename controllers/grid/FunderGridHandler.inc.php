@@ -192,7 +192,7 @@ class FunderGridHandler extends GridHandler {
 		if ($funderForm->validate()) {
 			$funderForm->execute();	
 			
- 			#return DAO::getDataChangedEvent();
+ 			return DAO::getDataChangedEvent();
 			
 		} else {
 			// Present any errors
