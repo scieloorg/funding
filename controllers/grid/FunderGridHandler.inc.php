@@ -55,10 +55,7 @@ class FunderGridHandler extends GridHandler {
 		if ($request->getUserVar('submissionId')) {		
 			$submissionId = $request->getUserVar('submissionId');
 		}
-		
-		error_log(print_r("handler initialize:", true));
-		error_log(print_r($submissionId, true));
-				
+								
 		// Set the grid details.
 		$this->setTitle('plugins.generic.fundRef.fundRef');
 		$this->setEmptyRowText('plugins.generic.fundRef.noneCreated');
@@ -123,6 +120,14 @@ class FunderGridHandler extends GridHandler {
 	/**
 	 * @copydoc Gridhandler::getRowInstance()
 	 */
+	 
+	/**
+	 * @see GridHandler::getJSHandler()
+	 */
+	public function getJSHandler() {
+		return '$.pkp.controllers.grid.funders.FunderGridHandler';
+	}
+	 
 	function getRowInstance() {
 		return new FunderGridRow();
 	}
@@ -155,10 +160,6 @@ class FunderGridHandler extends GridHandler {
 		
 		$this->setupTemplate($request);
 		
-		error_log(print_r("handler editfunder:", true));
-		error_log(print_r($submissionId, true));
-		
-		
 		// Create and present the edit form
 		import('plugins.generic.fundRef.controllers.grid.form.FunderForm');
 		$funderForm = new FunderForm(self::$plugin, $context->getId(), $submissionId, $funderId);
@@ -179,9 +180,6 @@ class FunderGridHandler extends GridHandler {
 		$submissionId = $args['submissionId'];
 		
 		$this->setupTemplate($request);
-		
-		error_log(print_r("handler updatefunder:", true));
-		error_log(print_r($submissionId, true));
 
 		// Create and populate the form
 		import('plugins.generic.fundRef.controllers.grid.form.FunderForm');
@@ -190,9 +188,8 @@ class FunderGridHandler extends GridHandler {
 		
 		// Check the results
 		if ($funderForm->validate()) {
-			$funderForm->execute();	
-			
- 			return DAO::getDataChangedEvent();
+			$funder = $funderForm->execute();
+ 			return DAO::getDataChangedEvent($submissionId);
 			
 		} else {
 			// Present any errors

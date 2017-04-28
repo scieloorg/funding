@@ -38,6 +38,8 @@ class fundRefPlugin extends GenericPlugin {
 			HookRegistry::register('Templates::Submission::SubmissionMetadataForm::AdditionalMetadata', array($this, 'metadataFieldEdit'));
 			
 			HookRegistry::register('LoadComponentHandler', array($this, 'setupGridHandler'));
+			
+			HookRegistry::register('TemplateManager::display',array($this, 'displayCallback'));
 				
         }
 		return $success;
@@ -51,6 +53,7 @@ class fundRefPlugin extends GenericPlugin {
 	 */
 	function setupGridHandler($hookName, $params) {
 		$component =& $params[0];
+		
 		if ($component == 'plugins.generic.fundRef.controllers.grid.FunderGridHandler') {
 			import($component);
 			FunderGridHandler::setPlugin($this);
@@ -66,18 +69,30 @@ class fundRefPlugin extends GenericPlugin {
 	function metadataFieldEdit($hookName, $params) {
 		$smarty =& $params[1];
 		$output =& $params[2];
-		
+		$request = $this->getRequest();		
 		$output .= $smarty->fetch($this->getTemplatePath() . 'metadataForm.tpl');
+		return false;
+	}
+	
+	function displayCallback($hookName, $params) {
+		$templateMgr = $params[0];
+		$templateMgr->addJavaScript(
+			'FunderGridHandlerJs',
+			'http://localhost/clean302/plugins/generic/fundRef/js/FunderGridHandler.js',
+			array(
+					'contexts' => 'backend',
+				)
+		);
+		
 		return false;
 	}	
 	
-
 	/**
 	 * @copydoc Plugin::getTemplatePath()
 	 */
 	function getTemplatePath($inCore = false) {
 		return parent::getTemplatePath($inCore) . 'templates/';
-	}
+	}	
 	
 	/**
 	 * Get the JavaScript URL for this plugin.

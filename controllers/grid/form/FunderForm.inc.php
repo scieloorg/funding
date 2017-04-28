@@ -38,9 +38,6 @@ class FunderForm extends Form {
 		$this->funderId = $funderId;
 		$this->plugin = $fundRefPlugin;
 		
-		error_log(print_r("construct editform:", true));
-		error_log(print_r($this->submissionId, true));
-		
 		// Add form checks
 		$this->addCheck(new FormValidator($this, 'funderNameIdentification', 'required', 'plugins.generic.fundRef.funderNameIdentificationRequired'));
 		$this->addCheck(new FormValidatorPost($this));
@@ -87,10 +84,6 @@ class FunderForm extends Form {
 	 */
 	function execute() {
 		$funderDao = DAORegistry::getDAO('FunderDAO');
-		
-		error_log(print_r("execute editform:", true));
-		error_log(print_r($this->submissionId, true));
-		error_log(print_r($this->contextId, true));
 		
 		if ($this->funderId) {
 			// Load and update an existing
